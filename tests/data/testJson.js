@@ -350,6 +350,89 @@ const testCases = [
             error: 0,
         },
     },
+
+    {
+        name: 'python : list comprehension',
+        reqObject: {
+            language: 'python',
+            script:
+                'squares = [x**2 for x in range(5)]\n' +
+                'print(squares)\n',
+        },
+        expectedResponse: {
+            val: '[0, 1, 4, 9, 16]\n',
+            status: 200,
+            error: 0,
+        },
+    },
+    {
+        name: 'go : map operations',
+        reqObject: {
+            language: 'go',
+            script: `
+                package main
+
+                import "fmt"
+
+                func main() {
+                    m := make(map[string]int)
+                    m["a"] = 1
+                    m["b"] = 2
+                    for k, v := range m {
+                        fmt.Println(k, v)
+                    }
+                }
+            `,
+        },
+        expectedResponse: {
+            val: 'a 1\nb 2\n',
+            status: 200,
+            error: 0,
+        },
+    },
+    {
+        name: 'java : basic class and methods',
+        reqObject: {
+            language: 'java',
+            script:
+                'class Person {\n' +
+                '    private String name;\n' +
+                '    private int age;\n' +
+                '    \n' +
+                '    public Person(String name, int age) {\n' +
+                '        this.name = name;\n' +
+                '        this.age = age;\n' +
+                '    }\n' +
+                '    \n' +
+                '    public String getName() {\n' +
+                '        return name;\n' +
+                '    }\n' +
+                '    \n' +
+                '    public int getAge() {\n' +
+                '        return age;\n' +
+                '    }\n' +
+                '    \n' +
+                '    public String toString() {\n' +
+                '        return "Name: " + name + ", Age: " + age;\n' +
+                '    }\n' +
+                '}\n' +
+                '\n' +
+                'public class Main {\n' +
+                '    public static void main(String[] args) {\n' +
+                '        Person person = new Person("Alice", 30);\n' +
+                '        System.out.println(person.getName());\n' +
+                '        System.out.println(person.getAge());\n' +
+                '        System.out.println(person);\n' +
+                '    }\n' +
+                '}\n',
+        },
+        expectedResponse: {
+            val: 'Alice\n30\nName: Alice, Age: 30\n',
+            status: 200,
+            error: 0,
+        },
+    },
+
 ]
 
 module.exports = { testCases }

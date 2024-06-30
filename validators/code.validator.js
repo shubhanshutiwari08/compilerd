@@ -22,7 +22,7 @@ const isValidForExecute = async (body) => {
         }),
         script: Joi.string()
             .when('language', {
-                is: [PROMPTV1, PROMPTV2, MULTIFILE],
+                is: [PROMPTV1, PROMPTV2, MULTIFILE, 'go'],
                 then: Joi.optional(),
                 otherwise: Joi.required(),
             }),

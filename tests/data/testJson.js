@@ -103,6 +103,58 @@ const testCases = [
             error: 0,
         },
     },
+    //GO
+    {
+        name: 'go : hello world',
+        reqObject: {
+            language: 'go',
+            script: `
+                package main
+
+                import "fmt"
+
+                func main() {
+                    fmt.Println("Hello, World!")
+                }
+            `,
+        },
+        expectedResponse: {
+            val: 'Hello, World!\n',
+            status: 200,
+            error: 0,
+        },
+    },
+    {
+        name: 'go : print stdin',
+        reqObject: {
+            language: 'go',
+            script: `
+                package main
+
+                import (
+                    "bufio"
+                    "fmt"
+                    "os"
+                )
+
+                func main() {
+                    scanner := bufio.NewScanner(os.Stdin)
+                    for scanner.Scan() {
+                        fmt.Println(scanner.Text())
+                    }
+                }
+            `,
+            stdin: '1\n2\n3',
+        },
+        expectedResponse: {
+            val: '1\n2\n3\n',
+            status: 200,
+            error: 0,
+        },
+    },
+    //GO ENDS
+
+
     {
         name: 'c : hello world',
         reqObject: {

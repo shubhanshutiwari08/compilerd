@@ -1,4 +1,4 @@
-/* globals gc */
+// /* globals gc */
 const util = require('util')
 const exec = util.promisify(require('child_process').exec)
 const os = require('os')
@@ -870,5 +870,308 @@ const _executeMultiFile = async (req, res, response) => {
         }
     }
 }
+module.exports = {execute}
 
-module.exports = { execute }
+
+//NEW
+
+/* globals gc */
+// const util = require('util');
+// const exec = util.promisify(require('child_process').exec);
+// const os = require('os');
+// const fs = require('fs');
+// const path = require('path');
+// const sqlite3 = require('sqlite3').verbose();
+// const { PYTHON, PROMPTV1, PROMPTV2, GO } = require('../enums/supportedLanguages');
+// const logger = require('../loader').helpers.l;
+// const OpenAI = require('openai');
+// const openai = new OpenAI();
+// const { LANGUAGES_CONFIG } = require('../configs/language.config');
+// const Joi = require('joi');
+// const memoryUsedThreshold = process.env.MEMORY_USED_THRESHOLD || 512;
+// const getDefaultAIEvalSystemPrompt = require('../helpers/defaultAIEvalSystemPrompt');
+// const puppeteer = require('puppeteer');
+// const express = require('express');
+// const http = require('http');
+// const { spawn } = require('child_process');
+// const appConfig = require('../configs/app.config.js');
+// const { FRONTEND_STATIC_JASMINE } = require('../enums/supportedMultifileSetupTypes.js');
+// const axios = require('axios');
+// const supportedLanguages = require('../enums/supportedLanguages');
+// const { generate } = require('@builder.io/sqlgenerate');
+// const parser = require('sqlite-parser');
+// const crypto = require('crypto');
+
+// const _runScript = async (cmd, res, runMemoryCheck = false) => {
+//     let initialMemory = 0;
+//     let memoryCheckInterval;
+//     let childProcess;
+//     let isChildKilled = false;
+    
+//     try {
+//         if (runMemoryCheck) {
+//             memoryCheckInterval = setInterval(async () => {
+//                 if (!initialMemory) {
+//                     initialMemory = Math.round(os.freemem() / 1024 / 1024);
+//                     logger.info({ initial_memory: initialMemory });
+//                 }
+
+//                 if ((initialMemory - Math.round(os.freemem() / 1024 / 1024)) > memoryUsedThreshold) {
+//                     logger.info({
+//                         use_mem: (initialMemory - Math.round(os.freemem() / 1024 / 1024)),
+//                         free_mem: Math.round(os.freemem() / 1024 / 1024),
+//                         total_mem: Math.round(os.totalmem() / 1024 / 1024),
+//                     });
+//                     logger.warn('Memory exceeded');
+
+//                     if (childProcess) {
+//                         childProcess.kill('SIGKILL');
+//                         isChildKilled = true;
+//                     } else {
+//                         logger.warn('Child process is undefined and response is on the way, trying to send another response');
+//                         _respondWithMemoryExceeded(res);
+//                     }
+//                 }
+//             }, 50);
+//         }
+
+//         const execPromise = exec(cmd);
+//         childProcess = execPromise.child;
+
+//         const result = await execPromise;
+
+//         if (memoryCheckInterval) {
+//             clearInterval(memoryCheckInterval);
+//             childProcess = undefined;
+//         }
+
+//         return { result };
+//     } catch (e) {
+//         if (memoryCheckInterval) {
+//             clearInterval(memoryCheckInterval);
+//             childProcess = undefined;
+//         }
+
+//         if (isChildKilled) {
+//             gc();
+//             await new Promise(resolve => setTimeout(resolve, 2000));
+//             e.message += ' Process killed due to Memory Limit Exceeded';
+//         }
+//         return { error: e.message, stdout: e.stdout, stderr: e.stderr };
+//     }
+// };
+
+// const _respondWithMemoryExceeded = (res) => {
+//     if (!res.headersSent) {
+//         res.status(200).send({
+//             output: 'Memory exceeded',
+//             execute_time: null,
+//             status_code: 200,
+//             memory: null,
+//             cpu_time: null,
+//             output_files: [],
+//             compile_message: '',
+//             error: 1,
+//         });
+//     }
+// };
+
+// const _prepareErrorMessage = (outputLog, language, command) => {
+//     let errorMsg = outputLog?.error ?? '';
+
+//     if (errorMsg.startsWith('Command failed:')) {
+//         errorMsg = errorMsg.replace('Command failed: ' + command, '');
+//     }
+
+//     if (language === PYTHON) {
+//         errorMsg = errorMsg.replace(/File ".*\/(.*?)"/g, 'File "$1"');
+//     }
+
+//     if (errorMsg.endsWith('MemoryError\n') || errorMsg.includes('Process killed due to Memory Limit Exceeded')) {
+//         errorMsg = 'Memory limit exceeded';
+//     }
+
+//     if (language === GO) {
+//         if (errorMsg.includes('exit status')) {
+//             errorMsg = 'Go build or run failed';
+//         }
+//     }
+
+//     if (!errorMsg.trim()) errorMsg = outputLog?.stdout || 'Unknown Error';
+//     return errorMsg;
+// };
+
+// const _executePrompt = async (req, res, response) => {
+//     const { prompt, aiEvalModel, lang, isTest, askMode, evals, shouldSaveCode } = req;
+//     const evaluator = new OpenAI();
+//     let totalValidRequests = 0;
+//     let allValidResponses = [];
+
+//     try {
+//         const promptV2 = PROMPTV2;
+//         const promptV1 = PROMPTV1;
+
+//         const promptToUse = promptV2.replace('<<PROMPT>>', prompt);
+
+//         let responseList = [];
+//         let systemPrompt = getDefaultAIEvalSystemPrompt();
+
+//         if (aiEvalModel) {
+//             systemPrompt = `## System
+//             ${aiEvalModel}
+//             `;
+//         }
+
+//         const openAiPrompt = `${systemPrompt}\n${promptToUse}`;
+//         responseList.push(await evaluator.completions.create({
+//             model: 'text-davinci-002',
+//             prompt: openAiPrompt,
+//             max_tokens: 1000,
+//             temperature: 0,
+//         }));
+
+//         totalValidRequests = responseList.length;
+//         responseList.forEach((res) => {
+//             if (res && res.choices && res.choices.length > 0) {
+//                 allValidResponses.push(res.choices[0].text);
+//             }
+//         });
+
+//         if (totalValidRequests > 0) {
+//             const result = _calculateScoreConfidence(allValidResponses);
+//             response.score = result.score;
+//             response.rationale = result.rationale;
+//             response.points = result.points;
+//             response.error = 0;
+//         } else {
+//             response.error = 1;
+//             response.score = 0;
+//             response.points = 0;
+//             response.rationale = 'No valid evaluations returned by OpenAI.';
+//         }
+//     } catch (e) {
+//         logger.error(e);
+//         response.error = 1;
+//         response.score = 0;
+//         response.points = 0;
+//         response.rationale = 'Error occurred while obtaining AI scores.';
+//     }
+// };
+
+// const _calculateScoreConfidence = (responses) => {
+//     const scoreMap = {};
+//     let maxCount = 0;
+//     let maxScore = 0;
+//     let rationale = '';
+//     let points = 0;
+
+//     responses.forEach((response) => {
+//         const match = response.match(/(\d+)(?:\s|\.)/);
+//         if (match) {
+//             const score = parseInt(match[1], 10);
+//             if (!scoreMap[score]) scoreMap[score] = 0;
+//             scoreMap[score] += 1;
+//             if (scoreMap[score] > maxCount) {
+//                 maxCount = scoreMap[score];
+//                 maxScore = score;
+//             }
+//         }
+//     });
+
+//     if (maxCount > 0) {
+//         points = maxScore * 10; // Assuming each point is 10
+//         rationale = `Most frequent score is ${maxScore} based on ${maxCount} responses.`;
+//     } else {
+//         rationale = 'No valid scores obtained from responses.';
+//     }
+
+//     return {
+//         score: maxScore,
+//         rationale: rationale,
+//         points: points,
+//     };
+// };
+
+// const _getAiScore = async (prompt, lang, isTest, askMode, evals, shouldSaveCode) => {
+//     let response = {};
+//     try {
+//         const res = await openai.completions.create({
+//             model: 'text-davinci-002',
+//             prompt: prompt,
+//             max_tokens: 1000,
+//             temperature: 0,
+//         });
+
+//         let totalValidRequests = res.choices.length;
+//         let allValidResponses = res.choices.map(choice => choice.text);
+
+//         if (totalValidRequests >= 3) {
+//             const result = _calculateScoreConfidence(allValidResponses);
+//             response.score = result.score;
+//             response.rationale = result.rationale;
+//             response.points = result.points;
+//             response.error = 0;
+//         } else {
+//             response.error = 1;
+//             response.score = 0;
+//             response.points = 0;
+//             response.rationale = 'Failed to obtain valid responses from OpenAI.';
+//         }
+//     } catch (err) {
+//         logger.error(err);
+//         response.error = 1;
+//         response.score = 0;
+//         response.points = 0;
+//         response.rationale = 'Error occurred while obtaining AI scores.';
+//     }
+//     return response;
+// };
+
+// const _executeCode = async (req, res, response) => {
+//     let args = req.args || null;
+//     let code = req.script;
+//     let hasInputFiles = req.hasInputFiles || false;
+//     let language = req.language;
+//     let stdin = req.stdin;
+
+//     try {
+//         const langConfig = LANGUAGES_CONFIG[language];
+//         await _runScript('rm -rf /tmp/*', res);
+
+//         await fs.promises.writeFile(`/tmp/${langConfig.filename}`, code);
+
+//         const compileCommand = `cd /tmp/ && ${langConfig.compile}`;
+//         const compileLog = await _runScript(compileCommand, res, true);
+//         response.compileMessage =
+//             compileLog.error ? _prepareErrorMessage(compileLog, language, compileCommand) : '';
+
+//         if (response.compileMessage === '') {
+//             let command = language === 'go'
+//                 ? `cd /tmp/ && timeout ${langConfig.timeout}s ${langConfig.run}`
+//                 : `cd /tmp/ && ulimit -v ${langConfig.memory} && ulimit -m ${langConfig.memory} && timeout ${langConfig.timeout}s ${langConfig.run}`;
+
+//             if (stdin) {
+//                 await fs.promises.writeFile('/tmp/input.txt', stdin);
+//                 command += ' < input.txt';
+//             }
+
+//             const outputLog = await _runScript(command, res, true);
+//             response.output = outputLog.error ? _prepareErrorMessage(outputLog, language, command) : outputLog.result.stdout;
+//             if (outputLog.error) {
+//                 response.error = 1;
+//             }
+//         } else {
+//             response.error = 1;
+//         }
+//     } catch (e) {
+//         logger.error(e);
+//         throw new Error('Unable to execute code.');
+//     }
+// };
+
+// module.exports = {
+//     executePrompt: _executePrompt,
+//     executeCode: _executeCode,
+//     calculateScoreConfidence: _calculateScoreConfidence,
+//     getAiScore: _getAiScore,
+// };

@@ -433,6 +433,24 @@ const testCases = [
         },
     },
 
+    {
+        name: 'nodejs : sum array',
+        reqObject: {
+            language: 'nodejs',
+            script:
+                'function sumArray(arr) {\n' +
+                '    return arr.reduce((acc, curr) => acc + curr, 0);\n' +
+                '}\n' +
+                'const numbers = [11, 22, 33, 44, 55];\n' +
+                'console.log(sumArray(numbers));\n',
+        },
+        expectedResponse: {
+            val: '165\n',
+            status: 200,
+            error: 0,
+        },
+    },
+
 ]
 
 module.exports = { testCases }
